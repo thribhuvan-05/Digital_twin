@@ -1,6 +1,6 @@
 # Digital Twin City Simulation
 
-**An AI-powered Digital Twin platform for urban monitoring, traffic analysis, accident data visualization, and intelligent route assessment.**
+An AI-powered Digital Twin platform for urban monitoring, traffic analysis, accident data visualization, and intelligent route assessment.
 
 Digital Twin City Simulation is a data-driven urban monitoring application designed to visualize geographical information, analyze traffic-related accident records, and support route assessment through an interactive mapping interface.
 
@@ -54,7 +54,6 @@ Digital-Twin-City-Simulation/
 ├── Dockerfile
 ├── README.md
 ├── app.html
-├── app.py
 ├── clean.py
 ├── cluster.py
 ├── db.json
@@ -104,7 +103,11 @@ if (!(Test-Path .env)) {
 
 Configure the required environment variables in `.env`.
 
-Add your Mapbox public access token as `MAPBOX_ACCESS_TOKEN`.
+Add your Mapbox public access token as:
+
+```env
+MAPBOX_ACCESS_TOKEN=your_mapbox_public_token
+```
 
 ### Step 4: Install Dependencies
 
@@ -126,7 +129,9 @@ npm start
 
 Open the application:
 
+```text
 http://localhost:5000
+```
 
 **Note:** Map tiles and driving directions require an internet connection.
 
@@ -233,9 +238,8 @@ The project includes Python scripts for geographical data processing.
 
 | File | Purpose |
 |---|---|
-| clean.py | Data cleaning workflow |
-| cluster.py | Geographical clustering workflow |
-| app.py | Python application component |
+| `clean.py` | Data cleaning workflow |
+| `cluster.py` | Geographical clustering workflow |
 
 The JavaScript scripts support dataset importing, generation, and utility operations.
 
@@ -342,7 +346,7 @@ server.test.js
 
 ## 13. Dataset Coverage
 
-| Region | Supported data source |
+| Region | Supported Data Source |
 |---|---|
 | Great Britain | Department for Transport STATS19 |
 | Chicago, USA | City of Chicago Data Portal |
@@ -372,8 +376,8 @@ B.Tech – Information Technology (AI & ML)
 
 GitHub: https://github.com/thribhuvan-05
 
+Project Repository: https://github.com/thribhuvan-05/Digital_twin
+
 ---
 
-**Digital Twin City Simulation**
-
-*Connecting geographical data, urban monitoring, and intelligent transportation analysis.*
+*Digital Twin City Simulation — Connecting geographical data, urban monitoring, and intelligent transportation analysis.*
