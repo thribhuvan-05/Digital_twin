@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="theme-color" content="#eef4f1"/>
+  <title>Roadwise | Traffic intelligence</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet"/>
+  <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet"/>
+  <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
+  <script src="/runtime-config.js"></script>
+  <style>
+    :root {
+      --ink:#10241c; --muted:#6f7f77; --line:#dde7e2; --green:#16704d;
+      --mint:#dcf8d8; --lime:#b9e769; --cream:#f7faf8; --orange:#ef8157;
+      --shadow:0 18px 50px rgba(18,55,40,.14);
+    }
+    *{box-sizing:border-box}
+    body{margin:0;height:100dvh;overflow:hidden;color:var(--ink);font:14px "DM Sans",sans-serif;background:#eef4f1}
+    button,input{font:inherit}
+    button{cursor:pointer}
+    button:focus-visible,input:focus-visible{outline:3px solid rgba(22,112,77,.24);outline-offset:2px}
+    .app{display:grid;grid-template-columns:320px minmax(0,1fr);height:100dvh;padding:12px;gap:12px}
+    .sidebar{position:relative;z-index:5;display:flex;flex-direction:column;overflow:hidden;border:1px solid rgba(221,231,226,.9);border-radius:22px;background:rgba(250,252,251,.96);box-shadow:var(--shadow)}
+    .brand{height:78px;display:flex;align-items:center;gap:11px;padding:0 20px;border-bottom:1px solid var(--line)}
+    .brand-mark{width:38px;height:38px;display:grid;place-items:center;border-radius:12px;background:var(--ink);color:#b9ef78;font:800 17px "Manrope",sans-serif;box-shadow:inset 0 0 0 1px rgba(255,255,255,.12)}
+    .brand-name{font:800 16px "Manrope",sans-serif;letter-spacing:.02em}
+    .brand-status{margin-left:auto;width:8px;height:8px;border-radius:50%;background:#79c75b;box-shadow:0 0 0 5px #79c75b18}
+    .scroll{flex:1;overflow:auto;padding:18px 20px 12px}
+    .intro{padding:4px 0 18px}
+    .eyebrow{color:var(--green);font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase}
+    .intro h1{margin:7px 0 6px;font:800 29px/1.08 "Manrope",sans-serif;letter-spacing:-.04em}
+    .intro p{margin:0;color:var(--muted);line-height:1.55}
+    .card{margin-top:12px;padding:15px;border:1px solid var(--line);border-radius:16px;background:#fff}
+    .card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+    .card-title{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.06em}
+    .card-meta{color:var(--muted);font-size:11px}
+    .dataset-note{margin-top:9px;padding:8px 9px;border-radius:9px;background:#edf3ef;color:#53675d;font-size:10px;line-height:1.45}
+    .dataset-note.demo{background:#fff2df;color:#84531d}
+    .dataset-note a{display:inline-block;margin-top:3px;color:var(--green);font-weight:700}
+    .zone-search{width:100%;height:34px;margin-top:9px;padding:0 10px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink);font:11px "DM Sans",sans-serif}
+    .segment{display:flex;flex-wrap:wrap;gap:4px;padding:4px;border-radius:12px;background:#edf3ef}
+    .segment.three button{flex:1 1 62px}
+    .segment button{height:38px;flex:1 1 88px;border:0;border-radius:9px;background:transparent;color:#718078;font-weight:700;font-size:12px}
+    .segment button[aria-pressed="true"]{background:#fff;color:var(--ink);box-shadow:0 3px 12px rgba(16,36,28,.08)}
+    .metric-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .metric{padding:12px;border-radius:12px;background:#f4f7f5}
+    .metric strong{display:block;font:800 21px "Manrope",sans-serif}
+    .metric span{display:block;margin-top:3px;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.05em}
+    .zone-list{display:grid;gap:7px;max-height:180px;overflow:auto;margin-top:10px}
+    .zone-row{display:flex;align-items:center;gap:8px;padding:8px 9px;border-radius:9px;background:#f5f8f6;font-size:11px}
+    .zone-row strong{min-width:0;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .zone-row small{color:var(--muted);font-size:10px}
+    .risk-dot{width:8px;height:8px;flex:none;border-radius:50%}.risk-dot.low{background:#5aa777}.risk-dot.medium{background:#efb65d}.risk-dot.high{background:#ef8157}
+    .route-options{display:grid;gap:7px;margin-top:9px}
+    .route-option{width:100%;height:auto;display:grid;grid-template-columns:1fr auto;gap:4px 8px;padding:9px 10px;border:1px solid var(--line);border-radius:10px;background:#fff;text-align:left;color:var(--ink)}
+    .route-option[aria-pressed="true"]{border-color:var(--green);box-shadow:0 0 0 2px #16704d18}
+    .route-option strong{font-size:11px}.route-option span{color:var(--muted);font-size:10px}.route-option .route-risk{grid-column:1/-1}
+    .route-line{display:grid;grid-template-columns:28px 1fr;align-items:center;gap:8px}
+    .route-track{height:68px;display:flex;flex-direction:column;align-items:center;justify-content:center}
+    .route-track i{display:block;width:10px;height:10px;border:3px solid var(--green);border-radius:50%}
+    .route-track i:last-child{border-color:var(--orange)}
+    .route-track:before{content:"";width:1px;height:32px;background:repeating-linear-gradient(to bottom,#abbcaf 0 4px,transparent 4px 8px)}
+    .route-track i:first-child{order:-1}
+    .route-copy{display:flex;flex-direction:column;gap:10px}
+    .route-copy span{color:var(--muted);font-size:12px}
+    .route-action{margin-top:12px;width:100%;height:40px;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--muted);font-weight:700}
+    .route-result{margin:10px 0 0;padding:10px 12px;border-radius:10px;background:#edf7ea;color:#3f5b4d;font-size:12px;line-height:1.45}
+    .toggle-row{display:flex;align-items:center;justify-content:space-between;margin-top:14px}
+    .toggle-copy strong{display:block;font-size:12px}.toggle-copy small{color:var(--muted);font-size:10px}
+    .switch{position:relative;width:42px;height:24px;border:0;border-radius:20px;background:#ccd8d1}
+    .switch:after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 2px 5px rgba(16,36,28,.18);transition:.2s}
+    .switch[aria-checked="true"]{background:var(--green)}.switch[aria-checked="true"]:after{transform:translateX(18px)}
+    .switch:disabled{opacity:.5}
+    .profile{height:64px;display:flex;align-items:center;gap:10px;padding:10px 20px;border-top:1px solid var(--line)}
+    .avatar{width:38px;height:38px;display:grid;place-items:center;border-radius:50%;background:var(--mint);color:var(--green);font-weight:800}
+    .profile-copy{min-width:0;flex:1}.profile-copy strong,.profile-copy small{display:block}.profile-copy strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.profile-copy small{margin-top:2px;color:var(--muted);font-size:11px}
+    .logout{height:34px;border:0;border-radius:9px;padding:0 10px;background:#edf3ef;color:#5d6b64;font-size:12px;font-weight:700}
+    .map-shell{position:relative;overflow:hidden;border-radius:22px;background:#dfe8e3;box-shadow:var(--shadow)}
+    #map{position:absolute;inset:0}
+    .map-tools{position:absolute;z-index:3;top:16px;left:16px;display:flex;gap:8px}
+    .map-chip{height:40px;display:flex;align-items:center;gap:9px;padding:0 12px;border:1px solid rgba(255,255,255,.7);border-radius:12px;background:rgba(255,255,255,.92);box-shadow:0 8px 24px rgba(16,36,28,.12);backdrop-filter:blur(12px)}
+    .live-dot{width:8px;height:8px;border-radius:50%;background:#77bc5a;box-shadow:0 0 0 5px rgba(119,188,90,.13)}
+    .map-chip strong{font-size:11px}.map-chip span:last-child{color:var(--muted);font-size:10px}
+    .legend{position:absolute;z-index:3;right:16px;bottom:16px;width:190px;padding:12px 14px;border:1px solid rgba(255,255,255,.7);border-radius:14px;background:rgba(255,255,255,.92);box-shadow:0 8px 24px rgba(16,36,28,.12);backdrop-filter:blur(12px)}
+    .legend strong{display:block;margin-bottom:9px;font-size:11px}.legend-bar{height:7px;border-radius:8px;background:linear-gradient(90deg,#d7edb5,#f0cf73,#ed7857)}
+    .legend-labels{display:flex;justify-content:space-between;margin-top:6px;color:var(--muted);font-size:9px}
+    .mapboxgl-ctrl-group{border:0!important;border-radius:12px!important;box-shadow:0 8px 24px rgba(16,36,28,.12)!important}
+    .mapboxgl-ctrl button{width:38px!important;height:38px!important}
+    @media(max-width:760px){
+      body{overflow:hidden}.app{display:block;padding:0}.map-shell{position:absolute;inset:0;border-radius:0}
+      .sidebar{position:absolute;z-index:6;left:10px;right:10px;bottom:10px;height:min(430px,62dvh);border-radius:18px}
+      .brand{height:58px}.scroll{padding:10px 14px}.intro{display:none}.card{margin-top:8px;padding:11px}.profile{height:54px;padding:8px 14px}
+      .map-tools{top:10px;left:10px}.legend{right:10px;bottom:calc(min(430px,62dvh) + 20px);width:150px}
+      .mapboxgl-ctrl-top-right{top:56px!important}
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <aside class="sidebar" aria-label="Roadwise controls">
+      <header class="brand">
+        <div class="brand-mark" aria-hidden="true">R</div>
+        <div class="brand-name">ROADWISE</div>
+        <div class="brand-status" title="Map connected"></div>
+      </header>
+      <div class="scroll">
+        <section class="intro">
+          <div class="eyebrow">Traffic intelligence</div>
+          <h1>See the collision zones.</h1>
+          <p>Explore reported collisions and compare route histories.</p>
+        </section>
+        <section class="card">
+          <div class="card-head"><span class="card-title">Region</span><span class="card-meta" id="region-status">Great Britain</span></div>
+          <div class="segment" id="region-choices" role="group" aria-label="Choose a region">
+            <button type="button" data-country="uk" aria-pressed="true">Great Britain</button>
+            <button type="button" data-country="india" aria-pressed="false">India</button>
+            <button type="button" data-country="usa" aria-pressed="false">United States</button>
+          </div>
+        </section>
+        <section class="card">
+          <div class="card-head"><span class="card-title">Accident records</span><span class="card-meta" id="data-state">Checking</span></div>
+          <div class="metric-row">
+            <div class="metric"><strong id="accident-count">—</strong><span>Reported collisions</span></div>
+            <div class="metric"><strong id="cluster-count">—</strong><span>Zones</span></div>
+          </div>
+          <div class="dataset-note" id="dataset-note" role="status">Checking dataset source…</div>
+          <input class="zone-search" id="zone-search" type="search" placeholder="Search zone or authority" aria-label="Search accident zones"/>
+          <div class="zone-list" id="zone-list" aria-label="Area risk zones"></div>
+        </section>
+        <section class="card">
+          <div class="card-head"><span class="card-title">Route planner</span><span class="card-meta" id="route-state">Ready</span></div>
+          <div class="route-line">
+            <div class="route-track" aria-hidden="true"><i></i><i></i></div>
+            <div class="route-copy"><span id="origin-label">Tap map for start</span><span id="destination-label">Tap map for destination</span></div>
+          </div>
+          <button class="route-action" id="reset-route" type="button">Clear route</button>
+          <div class="route-result" id="route-result" role="status" aria-live="polite">Choose a starting point, then a destination.</div>
+          <div class="route-options" id="route-options" role="group" aria-label="Route alternatives"></div>
+        </section>
+        <section class="card">
+          <div class="card-head"><span class="card-title">Map appearance</span></div>
+          <div class="segment three" role="group" aria-label="Map style">
+            <button type="button" data-mode="standard" aria-pressed="true">Street</button>
+            <button type="button" data-mode="satellite" aria-pressed="false">Satellite</button>
+            <button type="button" data-mode="3d" aria-pressed="false">3D</button>
+          </div>
+          <div class="toggle-row">
+            <div class="toggle-copy"><strong>Accident heatmap</strong><small id="heat-status">Dataset unavailable</small></div>
+            <button id="heat-toggle" class="switch" type="button" role="switch" aria-checked="true" aria-label="Toggle accident heatmap" disabled></button>
+          </div>
+        </section>
+      </div>
+      <footer class="profile">
+        <div class="avatar" id="avatar">RW</div>
+        <div class="profile-copy"><strong id="profile-name">Roadwise user</strong><small>Personal workspace</small></div>
+        <button class="logout" id="logout" type="button">Sign out</button>
+      </footer>
+    </aside>
+    <section class="map-shell" aria-label="Interactive traffic map">
+      <div id="map"></div>
+      <div class="map-tools"><div class="map-chip"><span class="live-dot"></span><div><strong id="map-region">GREAT BRITAIN</strong><br/><span id="map-coordinates">52.5° N · 1.5° W</span></div></div></div>
+      <div class="legend"><strong>Recorded collision severity</strong><div class="legend-bar"></div><div class="legend-labels"><span>LOWER</span><span>HIGHER</span></div><div class="legend-labels"><span>Route: green / amber / red</span><span></span></div></div>
+    </section>
+  </main>
+  <script>
+    mapboxgl.accessToken = window.ROADWISE_CONFIG.mapboxAccessToken;
+    const regions={
+      uk:{center:[-1.5,52.5],zoom:5.7,label:"GREAT BRITAIN",coordinates:"52.5° N · 1.5° W"},
+      india:{center:[78.9629,20.5937],zoom:4.2,label:"INDIA",coordinates:"20.6° N · 79.0° E"},
+      usa:{center:[-98.5795,39.8283],zoom:3.7,label:"UNITED STATES",coordinates:"39.8° N · 98.6° W"}
+    };
+    const styles={
+      standard:"mapbox://styles/mapbox/streets-v12",
+      satellite:"mapbox://styles/mapbox/satellite-streets-v12",
+      "3d":"mapbox://styles/mapbox/light-v11"
+    };
+    const accidentData=[];
+    let currentRegion="uk",currentStyle="standard",heatmapVisible=true,origin=null,destination=null,originMarker=null,destinationMarker=null,routeOptions=[],demoData=true;
+
+    const map=new mapboxgl.Map({container:"map",style:styles.standard,center:regions.uk.center,zoom:regions.uk.zoom,attributionControl:true});
+    map.addControl(new mapboxgl.NavigationControl({visualizePitch:true}),"top-right");
+
+    async function loadProfile(){
+      try{
+        const response=await fetch("/api/me");
+        if(!response.ok){window.location.replace("/login.html");return}
+        const {username}=await response.json();
+        document.getElementById("profile-name").textContent=username;
+        document.getElementById("avatar").textContent=username.slice(0,2).toUpperCase();
+      }catch{window.location.replace("/login.html")}
+    }
+    loadProfile();
+    async function loadAvailableRegions(){
+      try{
+        const response=await fetch("/api/accident-regions");
+        if(!response.ok)throw new Error("Could not load available accident regions.");
+        const payload=await response.json(),container=document.getElementById("region-choices");
+        for(const entry of payload.regions||[]){
+          if(!regions[entry.country]){
+            regions[entry.country]={
+              center:entry.center||[0,20],zoom:entry.coverage?.includes("Chicago only")?9:5,label:entry.label.toUpperCase(),
+              coordinates:entry.center?`${entry.center[1].toFixed(2)}° · ${entry.center[0].toFixed(2)}°`:"",
+              bounds:entry.bounds
+            };
+          }else if(entry.country==="usa"&&entry.label){
+            regions.usa.label=entry.label.toUpperCase();
+            regions.usa.bounds=entry.bounds;
+            if(entry.coverage?.includes("Chicago only")&&entry.center){
+              regions.usa.center=entry.center;regions.usa.zoom=9;
+            }
+          }
+          const existing=container.querySelector(`[data-country="${CSS.escape(entry.country)}"]`);
+          if(existing){existing.textContent=entry.label;continue}
+          const button=document.createElement("button");button.type="button";button.dataset.country=entry.country;
+          button.setAttribute("aria-pressed","false");button.textContent=entry.label;container.append(button);
+        }
+      }catch(error){
+        console.error("Could not load available accident regions:",error);
+      }
+    }
+    loadAvailableRegions();
+
+    function message(text){document.getElementById("route-result").textContent=text}
+    function showZonePopup(feature,coordinates){
+      const details=feature.properties,popup=document.createElement("div");
+      const title=document.createElement("strong");title.textContent=details.name;
+      const description=document.createElement("p");
+      description.textContent=`${Number(details.records).toLocaleString()} recorded collisions · ${details.risk} relative severity`;
+      popup.append(title,description);
+      new mapboxgl.Popup({closeButton:true,offset:12}).setLngLat(coordinates).setDOMContent(popup).addTo(map);
+    }
+    function updateHeatmap(){
+      if(!map.isStyleLoaded())return;
+      if(map.getLayer("accident-heat"))map.removeLayer("accident-heat");
+      if(map.getSource("accidents"))map.removeSource("accidents");
+      if(map.getLayer("accident-zones"))map.removeLayer("accident-zones");
+      if(map.getSource("accident-zones"))map.removeSource("accident-zones");
+      if(!heatmapVisible||!accidentData.length)return;
+      const zoneFeatures=areaZones().map(zone=>({type:"Feature",properties:{
+        name:demoData?zone.name:`${zone.name} · ${zone.authority}`,
+        records:zone.records,high:zone.high,risk:zone.risk
+      },geometry:{type:"Point",coordinates:[zone.longitude,zone.latitude]}}));
+      map.addSource("accident-zones",{type:"geojson",data:{type:"FeatureCollection",features:zoneFeatures}});
+      map.addLayer({id:"accident-zones",type:"circle",source:"accident-zones",paint:{
+        "circle-radius":["interpolate",["linear"],["get","records"],1,5,150,18],
+        "circle-color":["match",["get","risk"],"high","#ef8157","medium","#efb65d","#65a779"],
+        "circle-opacity":.18,"circle-stroke-width":2,"circle-stroke-color":["match",["get","risk"],"high","#ef8157","medium","#efb65d","#65a779"],
+        "circle-stroke-opacity":.75
+      }});
+      map.addSource("accidents",{type:"geojson",data:{type:"FeatureCollection",features:accidentData.map(p=>({type:"Feature",properties:{severity:p.severity,weight:p.recordCount||1},geometry:{type:"Point",coordinates:[p.Longitude,p.Latitude]}}))}});
+      map.addLayer({id:"accident-heat",type:"heatmap",source:"accidents",paint:{
+        "heatmap-intensity":["interpolate",["linear"],["zoom"],4,.6,12,1.5],
+        "heatmap-radius":["interpolate",["linear"],["zoom"],4,12,12,28],
+        "heatmap-weight":["get","weight"],
+        "heatmap-opacity":.72,
+        "heatmap-color":["interpolate",["linear"],["heatmap-density"],0,"rgba(185,231,105,0)",.3,"#b9e769",.65,"#efb65d",1,"#ef8157"]
+      }});
+    }
+    function areaZones(){
+      const grouped=new Map();
+      for(const point of accidentData){
+        const key=demoData?point.region||point.zone||"Unclassified":point.zone||point.region||"Unclassified";
+        if(!grouped.has(key))grouped.set(key,{name:key,authority:point.region||"Reported location",longitudes:[],latitudes:[],records:0,high:0,medium:0});
+        const zone=grouped.get(key),recordCount=point.recordCount||1;
+        zone.longitudes.push(point.Longitude);zone.latitudes.push(point.Latitude);zone.records+=recordCount;
+        if(point.severity==="high")zone.high+=recordCount;else if(point.severity==="medium")zone.medium+=recordCount;
+      }
+      return [...grouped.values()].map(zone=>{
+        const highRatio=zone.high/zone.records;
+        return {...zone,longitude:zone.longitudes.reduce((sum,value)=>sum+value,0)/zone.records,
+          latitude:zone.latitudes.reduce((sum,value)=>sum+value,0)/zone.records,
+          risk:zone.high>=20||highRatio>=.15?"high":zone.high>=8||highRatio>=.07||zone.medium/zone.records>=.25?"medium":"low"};
+      }).sort((a,b)=>({high:0,medium:1,low:2}[a.risk]-{high:0,medium:1,low:2}[b.risk])||a.name.localeCompare(b.name));
+    }
+    function renderAreaZones(){
+      const container=document.getElementById("zone-list");
+      container.replaceChildren();
+      const filter=document.getElementById("zone-search").value.trim().toLowerCase();
+      const zones=areaZones().filter(zone=>!filter||`${zone.name} ${zone.authority}`.toLowerCase().includes(filter));
+      for(const zone of zones.slice(0,100)){
+        const row=document.createElement("div");row.className="zone-row";
+        const dot=document.createElement("i");dot.className=`risk-dot ${zone.risk}`;dot.setAttribute("aria-hidden","true");
+        const name=document.createElement("strong");name.textContent=demoData?zone.name:`${zone.name} · ${zone.authority}`;
+        const count=document.createElement("small");        count.textContent=`${zone.records.toLocaleString()} collisions · ${zone.risk} severity`;
+        row.append(dot,name,count);container.append(row);
+      }
+      if(zones.length>100){
+        const note=document.createElement("div");note.className="dataset-note";note.textContent=`Showing 100 of ${zones.length.toLocaleString()} zones. Search to narrow the list.`;container.append(note);
+      }else if(!zones.length){
+        const note=document.createElement("div");note.className="dataset-note";note.textContent="No zones match this search.";container.append(note);
+      }
+    }
+    function renderRoute(){
+      const selected=routeOptions.find(route=>route.selected);
+      if(!selected||!map.isStyleLoaded())return;
+      removeRouteLayer();
+      map.addSource("selected-route",{type:"geojson",data:selected.riskFeatures});
+      map.addLayer({id:"selected-route",type:"line",source:"selected-route",layout:{ "line-cap":"round","line-join":"round","line-sort-key":["get","riskRank"]},paint:{
+        "line-color":["match",["get","risk"],"high","#ef8157","medium","#efb65d","low","#5aa777","#85918a"],
+        "line-width":6,"line-opacity":.95
+      }});
+    }
+    function removeRouteLayer(){
+      if(map.getLayer("selected-route"))map.removeLayer("selected-route");
+      if(map.getSource("selected-route"))map.removeSource("selected-route");
+    }
+    function distanceKm(a,b){
+      const toRad=v=>v*Math.PI/180,lat1=toRad(a[1]),lat2=toRad(b[1]),deltaLat=toRad(b[1]-a[1]),deltaLng=toRad(b[0]-a[0]);
+      const h=Math.sin(deltaLat/2)**2+Math.cos(lat1)*Math.cos(lat2)*Math.sin(deltaLng/2)**2;
+      return 6371*2*Math.atan2(Math.sqrt(h),Math.sqrt(1-h));
+    }
+    function buildRouteRiskFeatures(route){
+      const coordinates=route.geometry.coordinates;
+      const features=[];
+      if(!accidentData.length){
+        const stride=Math.max(1,Math.ceil((coordinates.length-1)/60));
+        for(let startIndex=0;startIndex<coordinates.length-1;startIndex+=stride){
+          const endIndex=Math.min(startIndex+stride,coordinates.length-1);
+          features.push({type:"Feature",properties:{risk:"unavailable",riskRank:0},geometry:{type:"LineString",coordinates:coordinates.slice(startIndex,endIndex+1)}});
+        }
+        return {features:{type:"FeatureCollection",features},summary:{unavailable:true,low:0,medium:0,high:0,score:0}};
+      }
+      let low=0,medium=0,high=0;
+      const stride=Math.max(1,Math.ceil((coordinates.length-1)/60));
+      for(let startIndex=0;startIndex<coordinates.length-1;startIndex+=stride){
+        const endIndex=Math.min(startIndex+stride,coordinates.length-1);
+        const start=coordinates[startIndex],end=coordinates[endIndex],mid=[(start[0]+end[0])/2,(start[1]+end[1])/2];
+        let weighted=0;
+        for(const point of accidentData){
+          if(distanceKm(mid,[point.Longitude,point.Latitude])<=1){
+            weighted+=(point.severity==="high"?3:point.severity==="medium"?2:1)*(point.recordCount||1);
+          }
+        }
+        const risk=weighted>=8?"high":weighted>=3?"medium":"low";
+        if(risk==="high")high++;else if(risk==="medium")medium++;else low++;
+        features.push({type:"Feature",properties:{risk,riskRank:risk==="high"?3:risk==="medium"?2:1},geometry:{type:"LineString",coordinates:coordinates.slice(startIndex,endIndex+1)}});
+      }
+      const score=high*3+medium;
+      return {features:{type:"FeatureCollection",features},summary:{low,medium,high,score}};
+    }
+    function addBuildings(){
+      if(currentStyle!=="3d"||map.getLayer("3d-buildings"))return;
+      const label=map.getStyle().layers.find(l=>l.type==="symbol"&&l.layout&&l.layout["text-field"]);
+      map.addLayer({id:"3d-buildings",source:"composite","source-layer":"building",filter:["==","extrude","true"],type:"fill-extrusion",minzoom:14,paint:{
+        "fill-extrusion-color":"#b9c8bf","fill-extrusion-height":["coalesce",["get","height"],0],"fill-extrusion-base":["coalesce",["get","min_height"],0],"fill-extrusion-opacity":.72
+      }},label&&label.id);
+    }
+    function setRegion(region){
+      currentRegion=region;const details=regions[region];
+      document.querySelectorAll("[data-country]").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.country===region)));
+      document.getElementById("region-status").textContent=details.label.toLowerCase().replace(/\b\w/g,char=>char.toUpperCase());
+      document.getElementById("map-region").textContent=details.label;
+      document.getElementById("map-coordinates").textContent=details.coordinates;
+      map.flyTo({center:details.center,zoom:details.zoom,duration:900});
+      clearRoute();
+      loadAccidents();
+    }
+    function setStyle(style){
+      currentStyle=style;
+      document.querySelectorAll("[data-mode]").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.mode===style)));
+      map.setStyle(styles[style]);
+      map.once("style.load",()=>{if(style==="3d")map.easeTo({pitch:55,bearing:-18,duration:700});else map.easeTo({pitch:0,bearing:0,duration:500});addBuildings();updateHeatmap();renderRoute()});
+    }
+    function renderRouteOptions(){
+      const container=document.getElementById("route-options");
+      container.replaceChildren();
+      routeOptions.forEach((route,index)=>{
+        const button=document.createElement("button");button.type="button";button.className="route-option";
+        button.setAttribute("aria-pressed",String(route.selected));
+        const title=document.createElement("strong");
+        const descriptor=route.lowestRisk
+          ?(demoData?" · lowest demo severity":" · lowest recorded severity")
+          :(route.fastest?" · fastest":"");
+        title.textContent=`Route ${index+1}${descriptor}`;
+        const time=document.createElement("strong");time.textContent=`${Math.max(1,Math.round(route.duration/60))} min`;
+        const distance=document.createElement("span");distance.textContent=`${(route.distance/1000).toFixed(1)} km`;
+        const risk=document.createElement("span");risk.className="route-risk";
+        risk.textContent=route.summary.unavailable
+          ?"Collision severity estimate unavailable"
+          :`Severity sections: ${route.summary.low} low · ${route.summary.medium} medium · ${route.summary.high} high`;
+        button.append(title,time,distance,risk);
+        button.addEventListener("click",()=>{
+          routeOptions.forEach(option=>option.selected=false);
+          route.selected=true;
+          renderRouteOptions();renderRoute();
+          document.getElementById("route-state").textContent=`${Math.max(1,Math.round(route.duration/60))} min`;
+          message(route.summary.unavailable
+            ?"No regional collision records are installed, so routes are shown without a severity estimate."
+            :demoData
+              ?`${route.summary.low} low · ${route.summary.medium} medium · ${route.summary.high} high demo-severity sections. The data is synthetic.`
+              :`${route.summary.low} low · ${route.summary.medium} medium · ${route.summary.high} high-severity sections. Historical collision records do not guarantee route safety.`);
+        });
+        container.append(button);
+      });
+    }
+    async function requestRoute(){
+      message("Finding route alternatives…");
+      const coordinates=`${origin[0]},${origin[1]};${destination[0]},${destination[1]}`;
+      const url=`https://api.mapbox.com/directions/v5/mapbox/driving/${coordinates}?geometries=geojson&overview=full&alternatives=true&access_token=${mapboxgl.accessToken}`;
+      try{
+        const response=await fetch(url),result=await response.json();
+        if(!response.ok||!result.routes?.length)throw new Error(result.message||"No route found.");
+        routeOptions=result.routes.map(route=>{
+          const risk=buildRouteRiskFeatures(route);
+          return {...route,riskFeatures:risk.features,summary:risk.summary,selected:false};
+        });
+        if(accidentData.length)routeOptions.sort((a,b)=>a.summary.score-b.summary.score||a.duration-b.duration);
+        else routeOptions.sort((a,b)=>a.duration-b.duration);
+        routeOptions[0].selected=true;
+        routeOptions[0].lowestRisk=accidentData.length>0;
+        routeOptions[0].fastest=accidentData.length===0;
+        document.getElementById("route-state").textContent=`${routeOptions.length} option${routeOptions.length===1?"":"s"}`;
+        renderRouteOptions();renderRoute();
+        message(!accidentData.length
+          ? "No regional collision records are installed; options are ordered by travel time only."
+          : demoData
+            ? "Showing the lowest demo severity score first. These points are synthetic and are not safety guidance."
+            : "Showing the route with the lowest recorded severity score first. This comparison does not account for traffic exposure and is not a safety guarantee.");
+      }catch(error){routeOptions=[];renderRouteOptions();document.getElementById("route-state").textContent="Unavailable";message(error.message||"Route lookup failed.")}
+    }
+    function clearRoute(){
+      origin=destination=null;routeOptions=[];
+      originMarker?.remove();destinationMarker?.remove();originMarker=destinationMarker=null;
+      removeRouteLayer();
+      renderRouteOptions();
+      document.getElementById("origin-label").textContent="Tap map for start";
+      document.getElementById("destination-label").textContent="Tap map for destination";
+      document.getElementById("route-state").textContent="Ready";
+      message("Choose a starting point, then a destination.");
+    }
+    async function loadAccidents(){
+      try{
+        accidentData.length=0;
+        const response=await fetch(`/api/accidents?country=${encodeURIComponent(currentRegion)}`),payload=await response.json();
+        if(!response.ok)throw new Error("Accident data unavailable");
+        demoData=Boolean(payload.isDemo);
+        for(const record of payload.accidents||[]){
+          const Longitude=Number(record.Longitude),Latitude=Number(record.Latitude);
+          if(Number.isFinite(Longitude)&&Number.isFinite(Latitude)&&Longitude>=-180&&Longitude<=180&&Latitude>=-90&&Latitude<=90){
+            accidentData.push({Longitude,Latitude,cluster:record.zone||record.cluster,severity:record.severity||"low",region:record.region,zone:record.zone,recordCount:Number(record.recordCount)||1});
+          }
+        }
+        const clusters=new Set(accidentData.map(r=>r.cluster).filter(v=>v!==undefined)).size;
+        document.getElementById("accident-count").textContent=(payload.recordCount||accidentData.reduce((sum,record)=>sum+record.recordCount,0)).toLocaleString();
+        document.getElementById("cluster-count").textContent=clusters?clusters.toLocaleString():accidentData.length?"1":"—";
+        document.getElementById("data-state").textContent=accidentData.length?"Ready":"No data";
+        document.getElementById("heat-status").textContent=accidentData.length?(payload.isDemo?"Demonstration dataset":"Regional records loaded"):"Dataset unavailable";
+        const datasetNote=document.getElementById("dataset-note");
+        datasetNote.classList.toggle("demo",demoData&&accidentData.length>0);
+        if(!accidentData.length){
+          datasetNote.textContent=`No geocoded accident data is installed for ${regions[currentRegion].label}.`;
+        }else if(demoData){
+          datasetNote.textContent="Synthetic demo data only — these are not real collision locations or safety guidance.";
+        }else{
+          const description=document.createElement("span");
+          description.textContent=`${payload.recordCount.toLocaleString()} reported collisions${payload.year?` · ${payload.year}`:""}.${payload.coverage?` ${payload.coverage}`:""} Counts are not adjusted for traffic exposure.`;
+          datasetNote.replaceChildren(description);
+          const trustedHosts=new Set(["data.dft.gov.uk","data.cityofchicago.org","data.cityofnewyork.us"]);
+          for(const source of payload.sources||[]){
+            if(!source.sourceUrl)continue;
+            const sourceUrl=new URL(source.sourceUrl);
+            if(!trustedHosts.has(sourceUrl.hostname))continue;
+            const link=document.createElement("a");link.href=sourceUrl.href;link.target="_blank";link.rel="noopener noreferrer";
+            link.textContent=`${source.source}${source.year?` · ${source.year}`:""}`;
+            datasetNote.append(document.createElement("br"),link);
+          }
+        }
+        document.getElementById("heat-toggle").disabled=!accidentData.length;
+        renderAreaZones();
+        updateHeatmap();
+        const bounds=accidentData.reduce((result,point)=>result.extend([point.Longitude,point.Latitude]),new mapboxgl.LngLatBounds());
+        if(!bounds.isEmpty())map.fitBounds(bounds,{padding:50,maxZoom:currentRegion==="uk"?6.2:8,duration:700});
+      }catch{
+        document.getElementById("data-state").textContent="Offline";
+        document.getElementById("heat-status").textContent="Dataset unavailable";
+        document.getElementById("zone-list").replaceChildren();
+        console.error(`Could not load accident data for ${currentRegion}.`);
+      }
+    }
+    document.getElementById("region-choices").addEventListener("click",event=>{
+      const button=event.target.closest("[data-country]");
+      if(button)setRegion(button.dataset.country);
+    });
+    document.querySelectorAll("[data-mode]").forEach(b=>b.addEventListener("click",()=>setStyle(b.dataset.mode)));
+    document.getElementById("reset-route").addEventListener("click",clearRoute);
+    document.getElementById("zone-search").addEventListener("input",renderAreaZones);
+    document.getElementById("heat-toggle").addEventListener("click",e=>{heatmapVisible=!heatmapVisible;e.currentTarget.setAttribute("aria-checked",String(heatmapVisible));updateHeatmap()});
+    document.getElementById("logout").addEventListener("click",()=>fetch("/logout",{method:"POST"}).finally(()=>window.location.assign("/login.html")));
+    map.on("load",loadAccidents);
+    map.on("click",e=>{
+      if(map.getLayer("accident-zones")){
+        const zone=map.queryRenderedFeatures(e.point,{layers:["accident-zones"]})[0];
+        if(zone){showZonePopup(zone,e.lngLat);return}
+      }
+      const coordinates=[e.lngLat.lng,e.lngLat.lat];
+      if(!origin){
+        origin=coordinates;originMarker=new mapboxgl.Marker({color:"#16704d"}).setLngLat(origin).addTo(map);
+        document.getElementById("origin-label").textContent=`${coordinates[1].toFixed(4)}, ${coordinates[0].toFixed(4)}`;
+        message("Start set. Now choose a destination.");return
+      }
+      if(!destination){
+        destination=coordinates;destinationMarker=new mapboxgl.Marker({color:"#ef8157"}).setLngLat(destination).addTo(map);
+        document.getElementById("destination-label").textContent=`${coordinates[1].toFixed(4)}, ${coordinates[0].toFixed(4)}`;
+        requestRoute();
+      }
+    });
+    map.on("mousemove",event=>{
+      const zones=map.getLayer("accident-zones")?map.queryRenderedFeatures(event.point,{layers:["accident-zones"]}):[];
+      map.getCanvas().style.cursor=zones.length?"pointer":"";
+    });
+  </script>
+</body>
+</html>

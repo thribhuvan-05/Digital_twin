@@ -1,0 +1,16 @@
+{
+  "users": [
+    {
+      "username": "Thribhuvan",
+      "password": "pbkdf2$c6a38ac59b4cb551c38ae33a5f324a5e$e1e046296fb6bb810e52272095ee05e8c2c7291792d5d67d8c25368e69933049"
+    },
+    {
+      "username": "CSE",
+      "password": "pbkdf2$8d6072b0574cb85ef4188c6a45e17ea5$ea8057663239b9ea12ada795589ac9388caa1b06828685d09f86ea2e828eefeb"
+    },
+    {
+      "username": "rahul",
+      "password": "pbkdf2$81bee7b60a32f40abad0e612692acaad$9fc9932fa06eedba18f6ed00f65dd57726a497fae8f2cae70fe1ea3dc16004c1"
+    }
+  ]
+}

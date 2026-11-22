@@ -1,0 +1,11 @@
+node_modules/
+.env
+.data/
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+.venv/
+__pycache__/
+accidents.csv
+clusters.json
+Accidents0515.csv

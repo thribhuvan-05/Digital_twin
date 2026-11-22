@@ -1,0 +1,11 @@
+.env
+.data
+.venv
+node_modules
+.git
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+*.csv
+db.json
+__pycache__
