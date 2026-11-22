@@ -1,101 +1,379 @@
-# Roadwise
+# Digital Twin City Simulation
 
-Roadwise is a single-instance traffic-analysis web app with an interactive Mapbox map, route planner, optional accident heatmap, account registration, and cookie-based sessions.
+**An AI-powered Digital Twin platform for urban monitoring, traffic analysis, accident data visualization, and intelligent route assessment.**
 
-## Local setup
+Digital Twin City Simulation is a data-driven urban monitoring application designed to visualize geographical information, analyze traffic-related accident records, and support route assessment through an interactive mapping interface.
 
-Requirements: Node.js 22 or newer and npm.
+The platform integrates an interactive Mapbox map, route planning, accident heatmap visualization, user authentication, and data-processing capabilities to provide a unified environment for exploring urban transportation data.
+
+---
+
+## 1. Key Features
+
+- Interactive Digital Twin Map using Mapbox.
+- Route planning and alternative route comparison.
+- Accident heatmap and geographical visualization.
+- Traffic accident data analysis.
+- Multi-country geographical dataset support.
+- User registration and authentication.
+- Cookie-based session management.
+- Python-based data cleaning and clustering.
+- Automated dataset importing and processing.
+- Docker-based deployment support.
+
+## 2. Technology Stack
+
+| Component | Technology |
+|---|---|
+| Backend | Node.js |
+| Data Processing | Python |
+| Frontend | HTML, CSS, JavaScript |
+| Mapping | Mapbox |
+| Database | SQLite |
+| Data Storage | JSON |
+| Package Manager | npm |
+| Containerization | Docker |
+| Testing | Node.js Test Runner |
+
+## 3. Project Structure
+
+```text
+Digital-Twin-City-Simulation/
+│
+├── scripts/
+│   ├── dataset-utils.js
+│   ├── generate-demo-accidents.js
+│   ├── import-chicago-us.js
+│   ├── import-country-accidents.js
+│   ├── import-dft-uk.js
+│   └── import-nyc-us.js
+│
+├── .dockerignore
+├── .env.example
+├── .gitignore
+├── Dockerfile
+├── README.md
+├── app.html
+├── app.py
+├── clean.py
+├── cluster.py
+├── db.json
+├── login.html
+├── package.json
+├── package-lock.json
+├── register.html
+├── requirements.txt
+├── server.js
+└── server.test.js
+```
+
+## 4. Prerequisites
+
+Before running the application, install:
+
+- Node.js 22 or newer
+- npm
+- Python 3
+- Git
+- Docker (optional)
+- Mapbox public access token
+
+## 5. Installation and Setup
+
+### Step 1: Clone the Repository
+
+```bash
+git clone https://github.com/thribhuvan-05/Digital_twin.git
+```
+
+### Step 2: Navigate to the Project
+
+```bash
+cd Digital_twin
+```
+
+### Step 3: Configure Environment Variables
+
+Create a local environment file:
 
 ```powershell
-if (!(Test-Path .env)) { Copy-Item .env.example .env }
+if (!(Test-Path .env)) {
+    Copy-Item .env.example .env
+}
+```
+
+Configure the required environment variables in `.env`.
+
+Add your Mapbox public access token as `MAPBOX_ACCESS_TOKEN`.
+
+### Step 4: Install Dependencies
+
+```bash
 npm ci
+```
+
+### Step 5: Run Tests
+
+```bash
 npm test
+```
+
+### Step 6: Start the Application
+
+```bash
 npm start
 ```
 
-Open <http://localhost:5000>. Set `MAPBOX_ACCESS_TOKEN` in `.env` to a restricted Mapbox public token. Map tiles and driving directions require internet access. Local development imports existing `db.json` users into `.data/roadwise.sqlite` once and replaces legacy plain-text passwords in `db.json` with their hashes. Production does not import demo accounts.
+Open the application:
 
-## Docker deployment
+http://localhost:5000
 
-Create a restricted Mapbox public token and a random session secret. One way to generate the secret is:
+**Note:** Map tiles and driving directions require an internet connection.
 
-```powershell
-node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"
-```
+Local development imports existing `db.json` users into `.data/roadwise.sqlite` once and replaces legacy plain-text passwords in `db.json` with their hashes. Production does not import demo accounts.
 
-Set `MAPBOX_ACCESS_TOKEN` and `SESSION_SECRET` in `.env`, then build and run with persistent storage:
+## 6. Python Environment Setup
 
-```powershell
-docker build -t roadwise .
-docker volume create roadwise-data
-docker run --name roadwise --restart unless-stopped -p 5000:5000 --env-file .env -e NODE_ENV=production -e DATA_DIR=/app/data -v roadwise-data:/app/data roadwise
-```
+Create a virtual environment:
 
-The container runs as a non-root user and has a `/api/health` health check. Keep the volume when replacing or restarting the container; it stores the SQLite database. This configuration is for one app instance. Do not run multiple replicas against a local SQLite file; use a managed database before scaling horizontally. Terminate HTTPS at the hosting platform or reverse proxy.
-
-Mapbox access tokens are public browser tokens, not server secrets. Restrict their allowed URLs and APIs in Mapbox, and rotate the development token before deploying. The token is sent to browsers through `/runtime-config.js` and is not embedded in the HTML.
-
-## Accident data
-
-The project includes real Great Britain Department for Transport STATS19 records and official geocoded US city data from Chicago and New York City. US coverage is limited to those cities, not nationwide. India is not populated with guessed locations: install an authorized geocoded dataset with the generic importer below. Additional countries can be added the same way.
-
-An importer is included to refresh the published Great Britain dataset. Download and import an annual collision CSV (default: 2025) into the configured `DATA_DIR`:
-
-```powershell
-npm run import:dft:uk
-```
-
-You can select a year or import a CSV you already downloaded:
-
-```powershell
-npm run import:dft:uk -- 2024
-npm run import:dft:uk -- 2024 .\path\to\dft-collisions.csv
-```
-
-Official source: [DfT Road Safety Open Data](https://www.gov.uk/government/statistical-data-sets/road-safety-open-data). The importer aggregates reported collisions by LSOA (or a coordinate grid where the LSOA code is absent), publishes severity counts, and replaces the dataset in `DATA_DIR`. It does not infer traffic exposure or predict safety. The importer currently covers Great Britain only.
-
-Import real, geocoded City of Chicago crash records (2023–2025 by default; current-year partial records are excluded):
-
-```powershell
-npm run import:chicago:us
-```
-
-The source is the [City of Chicago Data Portal crash dataset](https://data.cityofchicago.org/Transportation/Traffic-Crashes-Crashes/85ca-t3if). The importer fetches published coordinate records and adds them as US zones while preserving other countries' data. The dashboard labels the coverage as Chicago only.
-
-Import real, geocoded New York City Motor Vehicle Collision records (2023–2025 by default):
-
-```powershell
-npm run import:nyc:us
-```
-
-The source is [NYC Open Data — Motor Vehicle Collisions - Crashes](https://data.cityofnewyork.us/Public-Safety/Motor-Vehicle-Collisions-Crashes/h9gi-nx95). The dashboard combines both city datasets under US and shows the covered cities/years. This does not represent all US locations.
-
-Import a licensed geocoded dataset for India or another country. The CSV must have longitude, latitude, and severity columns; optionally use an administrative zone column:
-
-```powershell
-npm run import:country -- IN "India" "Official source name" 2024 .\india-crashes.csv longitude latitude district severity https://example.gov.in/data
-```
-
-Replace the sample source name, URL, year, and columns with the actual dataset provenance. ISO alpha-2/alpha-3 codes are accepted. The importer groups coordinates into zones and preserves other imported countries. It will not obtain or invent data for you. If the official dataset is only state-level totals and has no coordinates, it cannot produce real map zones.
-
-`npm run generate:accidents` replaces the dataset with synthetic UK/India/USA interface-test points. Do not run that command if you want to keep the official dataset.
-
-The dashboard lists searchable zones for the selected country and makes each zone clickable on the map. Route alternatives are compared against nearby collision records and their severity, with sampled route sections colored by relative recorded collision severity. These descriptive estimates depend on dataset coverage, date range, quality, and Mapbox alternatives; they are not predictions or safety guarantees.
-
-```powershell
+```bash
 python -m venv .venv
+```
+
+Activate the environment in Windows PowerShell:
+
+```powershell
 .venv\Scripts\Activate.ps1
+```
+
+Install Python dependencies:
+
+```bash
 pip install -r requirements.txt
+```
+
+Run the data-processing scripts:
+
+```bash
 python clean.py
 python cluster.py
 ```
 
-For local use, `clusters.json` beside the application is loaded automatically. In Docker, the build copies it to `/app/data/clusters.json`; a persistent volume can replace it with a production dataset. Without it, the map and route planner remain available.
+## 7. Accident Data Sources
 
-## Before a public launch
+The project supports geographical accident datasets from multiple sources.
 
-- Configure HTTPS, a restricted Mapbox token, a strong `SESSION_SECRET`, and persistent storage.
-- Create the first production account through registration; sample accounts are not imported.
-- Review the dataset license and privacy implications before publishing accident locations.
-- The current inline browser scripts require a CSP allowance for inline scripts. Move them to versioned external assets before enforcing a stricter script policy.
-- SQLite on a persistent disk is intended for a small, single-instance deployment. Use a managed relational database, backups, and monitoring for a multi-instance or higher-availability service.
+### Great Britain – Department for Transport
+
+The project includes Great Britain Department for Transport STATS19 records.
+
+Import the dataset:
+
+```bash
+npm run import:dft:uk
+```
+
+Select a specific year:
+
+```bash
+npm run import:dft:uk -- 2024
+```
+
+Official source:
+
+https://www.gov.uk/government/statistical-data-sets/road-safety-open-data
+
+### Chicago, USA
+
+Import real, geocoded Chicago crash records:
+
+```bash
+npm run import:chicago:us
+```
+
+Official source:
+
+https://data.cityofchicago.org/Transportation/Traffic-Crashes-Crashes/85ca-t3if
+
+### New York City, USA
+
+Import New York City Motor Vehicle Collision records:
+
+```bash
+npm run import:nyc:us
+```
+
+Official source:
+
+https://data.cityofnewyork.us/Public-Safety/Motor-Vehicle-Collisions-Crashes/h9gi-nx95
+
+### India and Other Countries
+
+The application provides a generic importer for licensed, geocoded accident datasets.
+
+Example:
+
+```bash
+npm run import:country -- IN "India" "Official source name" 2024 .\india-crashes.csv longitude latitude district severity https://example.gov.in/data
+```
+
+Required CSV fields:
+
+- Longitude
+- Latitude
+- Severity
+
+An administrative zone column can optionally be included.
+
+**Data integrity:** The importer does not automatically obtain or invent accident records. Imported data must have valid geographical coordinates and appropriate licensing.
+
+## 8. Data Processing and Clustering
+
+The project includes Python scripts for geographical data processing.
+
+| File | Purpose |
+|---|---|
+| clean.py | Data cleaning workflow |
+| cluster.py | Geographical clustering workflow |
+| app.py | Python application component |
+
+The JavaScript scripts support dataset importing, generation, and utility operations.
+
+To generate synthetic interface-testing accident points:
+
+```bash
+npm run generate:accidents
+```
+
+**Warning:** This command replaces the existing accident dataset with synthetic UK, India, and USA testing points. Do not execute it if you want to preserve imported official records.
+
+## 9. Route Assessment and Visualization
+
+The application provides:
+
+- Interactive geographical visualization.
+- Searchable geographical accident zones.
+- Route planning and alternative comparison.
+- Accident information around available routes.
+- Sampled route sections visualized using relative recorded collision severity.
+
+These are descriptive estimates based on the available accident records.
+
+They depend on dataset coverage, quality, date range, and Mapbox alternatives.
+
+**Disclaimer:** The visualizations are not guaranteed road-safety predictions or assurances that a particular route is safe.
+
+## 10. Docker Deployment
+
+The application supports Docker-based deployment.
+
+### Generate a Session Secret
+
+```bash
+node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"
+```
+
+### Configure Environment Variables
+
+Add the following to `.env`:
+
+```env
+MAPBOX_ACCESS_TOKEN=your_mapbox_public_token
+SESSION_SECRET=your_generated_random_secret
+```
+
+### Build Docker Image
+
+```bash
+docker build -t digital-twin-city .
+```
+
+### Create Persistent Storage
+
+```bash
+docker volume create digital-twin-data
+```
+
+### Run the Container
+
+```bash
+docker run --name digital-twin-city --restart unless-stopped -p 5000:5000 --env-file .env -e NODE_ENV=production -e DATA_DIR=/app/data -v digital-twin-data:/app/data digital-twin-city
+```
+
+The container:
+
+- Runs as a non-root user.
+- Includes a `/api/health` health check.
+- Uses persistent storage for SQLite.
+- Supports a single application instance.
+
+Do not run multiple replicas against a local SQLite database. Use a managed database before scaling horizontally.
+
+## 11. Security Considerations
+
+Before public deployment:
+
+- Configure HTTPS.
+- Use a restricted Mapbox public token.
+- Generate a strong session secret.
+- Never upload passwords, API keys, or private credentials.
+- Configure persistent storage.
+- Review authentication and database security.
+- Review dataset licensing and privacy implications.
+- Configure backups and monitoring.
+
+Mapbox browser tokens are public tokens, not server secrets. Restrict their allowed URLs and APIs through Mapbox settings.
+
+The current inline browser scripts require a CSP allowance for inline scripts. Move them to versioned external assets before enforcing a stricter script policy.
+
+## 12. Testing
+
+Run the automated test suite:
+
+```bash
+npm test
+```
+
+Test file:
+
+```text
+server.test.js
+```
+
+## 13. Dataset Coverage
+
+| Region | Supported data source |
+|---|---|
+| Great Britain | Department for Transport STATS19 |
+| Chicago, USA | City of Chicago Data Portal |
+| New York City, USA | NYC Open Data |
+| India | Licensed geocoded CSV importer |
+| Other countries | Licensed geocoded CSV importer |
+
+Actual geographical coverage depends on the datasets imported into the application.
+
+## 14. Future Development Scope
+
+Potential future improvements include:
+
+- Expanded geographical dataset coverage.
+- Advanced spatial data processing.
+- Improved traffic-pattern analysis.
+- Enhanced accident visualization.
+- Additional analytical capabilities.
+- Improved scalability and deployment architecture.
+- Integration of additional authorized geographical data sources.
+
+## 15. Author
+
+**E. V. Sai Thribhuvan**
+
+B.Tech – Information Technology (AI & ML)
+
+GitHub: https://github.com/thribhuvan-05
+
+---
+
+**Digital Twin City Simulation**
+
+*Connecting geographical data, urban monitoring, and intelligent transportation analysis.*
